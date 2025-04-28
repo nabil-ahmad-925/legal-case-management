@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                Int               @id @default(autoincrement())
+  email             String            @unique
+  password          String
+  firstName         String            @map("first_name")
+  lastName          String            @map("last_name")
+  role              UserRole
+  caseAssignments   CaseAssignment[]
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  lastLogin         DateTime?         @map("last_login")
+
+  @@map("users")
+}
+
+model Case {
+  id              Int               @id @default(autoincrement())
+  caseNumber      String            @unique @map("case_number")
+  title           String
+  description     String?
+  status          CaseStatus
+  priority        CasePriority?
+  practiceArea    String?           @map("practice_area")
+
+  clientName      String?           @map("client_name")
+  clientEmail     String?           @map("client_email")
+  clientPhone     String?           @map("client_phone")
+  opposingParty   String?           @map("opposing_party")
+  courtName       String?           @map("court_name")
+  judgeAssigned   String?           @map("judge_assigned")
+
+  filingDate      DateTime?         @map("filing_date")
+  hearingDate     DateTime?         @map("hearing_date")
+  closingDate     DateTime?         @map("closing_date")
+
+  billingType     BillingType?      @map("billing_type")
+  billingRate     Float?            @map("billing_rate")
+  estimatedValue  Float?            @map("estimated_value")
+
+  customFields    Json?             @map("custom_fields")
+
+  assignments     CaseAssignment[]
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  createdBy       Int?              @map("created_by")
+
+  @@map("cases")
+}
+
+model CaseAssignment {
+  id          Int             @id @default(autoincrement())
+  case        Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId      Int             @map("case_id")
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int             @map("user_id")
+  role        CaseRole
+  assignedAt  DateTime        @default(now()) @map("assigned_at")
+
+  @@unique([caseId, userId])
+  @@map("case_assignments")
+}
+
+enum UserRole {
+  ADMIN
+  LAWYER
+  PARALEGAL
+  ASSISTANT
+}
+
+enum CaseStatus {
+  OPEN
+  CLOSED
+  PENDING
+  ARCHIVED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CaseRole {
+  LEAD
+  ASSOCIATE
+  PARALEGAL
+  ASSISTANT
+}
+
+enum BillingType {
+  HOURLY
+  FLAT_FEE
+  CONTINGENCY
+  PRO_BONO
+}
